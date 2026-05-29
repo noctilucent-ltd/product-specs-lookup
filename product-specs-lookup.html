@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Specs Lookup</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .layout {
+      display: flex;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+
+    .main { flex: 1; min-width: 0; }
+    .sidebar { width: 300px; flex-shrink: 0; }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+
+    h1 { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; }
+    .tab {
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 11px 13px;
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: #4f46e5; }
+    textarea { resize: vertical; min-height: 100px; }
+
+    .photo-area {
+      border: 2px dashed #d8d8d8;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .photo-area:hover { border-color: #4f46e5; background: #f8f7ff; }
+    .photo-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .photo-area .icon { font-size: 22px; margin-bottom: 4px; }
+    .photo-area p { font-size: 12px; color: #999; }
+    .photo-area p span { color: #4f46e5; font-weight: 600; }
+    #preview { display: none; width: 64px; height: 64px; object-fit: cover; border-radius: 8px; margin: 6px auto 0; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover:not(:disabled) { background: #4338ca; }
+    .btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-copy { background: #f0f0ff; color: #4f46e5; }
+    .btn-copy:hover { background: #e0ddff; }
+    .btn-ghost { background: #f5f5f5; color: #555; }
+    .btn-ghost:hover { background: #ececec; }
+
+    .spinner {
+      display: none;
+      text-align: center;
+      padding: 20px 0 4px;
+      color: #888;
+      font-size: 13px;
+    }
+    .spinner::before {
+      content: '';
+      display: block;
+      width: 32px; height: 32px;
+      border: 3px solid #e8e8e8;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Results */
+    .results { display: none; margin-top: 22px; border-top: 2px solid #f5f5f5; padding-top: 20px; }
+    .results-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+    }
+    .results-header h2 { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+
+    .copy-bar {
+      display: flex; gap: 6px;
+    }
+
+    /* Best result boxes */
+    .best-result {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .result-box {
+      background: #f8f7ff;
+      border: 1.5px solid #e8e6ff;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .result-box .rlabel { font-size: 10px; font-weight: 700; color: #7c6fcd; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .result-box .rvalue { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+    .result-box .runit { font-size: 11px; color: #999; }
+
+    /* Confidence */
+    .confidence-bar {
+      display: flex; align-items: center; gap: 8px;
+      background: #f9f9f9; border-radius: 8px; padding: 10px 12px;
+      margin-bottom: 14px; font-size: 12px; color: #555;
+    }
+    .conf-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .conf-high { background: #22c55e; }
+    .conf-medium { background: #f59e0b; }
+    .conf-low { background: #ef4444; }
+
+    /* Sources table */
+    .sources-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+    .source-row {
+      background: #fafafa;
+      border: 1px solid #efefef;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .source-row .sname { font-weight: 700; color: #333; margin-bottom: 4px; }
+    .source-row .sdata { display: flex; gap: 16px; flex-wrap: wrap; color: #555; margin-bottom: 4px; }
+    .source-row .sdata span { }
+    .source-row .sdata strong { color: #1a1a2e; }
+    .source-row a { color: #4f46e5; text-decoration: none; font-size: 11px; word-break: break-all; }
+    .source-row a:hover { text-decoration: underline; }
+
+    .error-box {
+      margin-top: 14px;
+      background: #fff0f0; border: 1.5px solid #ffd0d0;
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 12px; color: #c0392b; display: none;
+    }
+
+    /* Bulk progress */
+    .bulk-progress { display: none; margin-top: 14px; }
+    .progress-bar-wrap { background: #f0f0f0; border-radius: 99px; height: 6px; margin: 8px 0; overflow: hidden; }
+    .progress-bar-fill { background: #4f46e5; height: 100%; border-radius: 99px; transition: width 0.4s; }
+    .progress-text { font-size: 12px; color: #888; }
+    .bulk-results { margin-top: 14px; }
+    .bulk-item {
+      border: 1px solid #efefef; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; font-size: 13px;
+    }
+    .bulk-item .bi-name { font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+    .bulk-item .bi-data { display: flex; gap: 16px; flex-wrap: wrap; color: #555; font-size: 12px; }
+    .bulk-item .bi-data strong { color: #1a1a2e; }
+    .bulk-item .bi-conf { font-size: 11px; color: #888; margin-top: 4px; font-style: italic; }
+    .bulk-copy-btn { float: right; }
+
+    /* History sidebar */
+    .sidebar .card { padding: 20px; }
+    .sidebar h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .sidebar h3 button { font-size: 11px; font-weight: 600; color: #aaa; background: none; border: none; cursor: pointer; }
+    .sidebar h3 button:hover { color: #ef4444; }
+    .history-empty { font-size: 12px; color: #bbb; text-align: center; padding: 20px 0; }
+    .hist-item {
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .hist-item:last-child { border-bottom: none; }
+    .hist-item:hover { background: #f8f7ff; }
+    .hist-name { font-size: 13px; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hist-meta { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+    @media (max-width: 700px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="card">
+      <h1>📦 Product Specs Lookup</h1>
+      <p class="subtitle">Weight &amp; dimensions via Gemini + Google Search &nbsp;·&nbsp; <span style="color:#4f46e5;cursor:pointer;font-size:12px" onclick="resetApiKey()">🔑 Reset API key</span></p>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('single')">Single product</div>
+        <div class="tab" onclick="switchTab('bulk')">Bulk lookup</div>
+      </div>
+
+      <!-- SINGLE TAB -->
+      <div class="tab-panel active" id="tab-single">
+        <label for="productName">Product name</label>
+        <input type="text" id="productName" placeholder="e.g. Kwan Loong Oil 57ml" />
+
+        <label>Photo <span style="font-weight:400;color:#bbb;text-transform:none">(optional)</span></label>
+        <div class="photo-area" id="photoArea">
+          <input type="file" id="photoInput" accept="image/*" />
+          <div class="icon">🖼️</div>
+          <p><span>Click to upload</span> or drag here</p>
+          <img id="preview" alt="preview" />
+        </div>
+
+        <button class="btn" id="searchBtn" onclick="lookupSingle()">🔍 Find Specs</button>
+
+        <div class="spinner" id="spinner">Searching with Gemini…</div>
+        <div class="error-box" id="errorBox"></div>
+
+        <!-- RESULTS -->
+        <div class="results" id="results">
+          <div class="results-header">
+            <h2>Results</h2>
+            <div class="copy-bar">
+              <button class="btn-sm btn-copy" onclick="copyWeight()">📋 Copy weight</button>
+              <button class="btn-sm btn-copy" onclick="copyDims()">📋 Copy dims</button>
+              <button class="btn-sm btn-copy" onclick="copyAll()">📋 Copy all</button>
+            </div>
+          </div>
+
+          <div class="best-result">
+            <div class="result-box">
+              <div class="rlabel">Shipping weight</div>
+              <div class="rvalue" id="resShipping">—</div>
+              <div class="runit">grams</div>
+            </div>
+            <div class="result-box">
+              <div class="rlabel">Net weight</div>
+              <div class="rvalue" id="resNet">—</div>
+              <div class="runit">grams</div>
+            </div>
+            <div class="result-box">
+              <div class="rlabel">Dimensions</div>
+              <div class="rvalue" id="resDims">—</div>
+              <div class="runit">L × W × H (cm)</div>
+            </div>
+            <div class="result-box">
+              <div class="rlabel">Best source</div>
+              <div class="rvalue" style="font-size:13px;font-weight:600" id="resBestSource">—</div>
+              <div class="runit" id="resBestSourceUrl"></div>
+            </div>
+          </div>
+
+          <div class="confidence-bar" id="confBar">
+            <div class="conf-dot conf-medium" id="confDot"></div>
+            <span id="confNote">—</span>
+          </div>
+
+          <div class="sources-title">All sources checked</div>
+          <div id="sourcesList"></div>
+        </div>
+      </div>
+
+      <!-- BULK TAB -->
+      <div class="tab-panel" id="tab-bulk">
+        <label for="bulkInput">Product names (one per line)</label>
+        <textarea id="bulkInput" placeholder="Kwan Loong Oil 57ml&#10;Tiger Balm Red 30g&#10;Siang Pure Oil 3ml"></textarea>
+        <button class="btn" id="bulkBtn" onclick="runBulk()">🔍 Look up all</button>
+
+        <div class="bulk-progress" id="bulkProgress">
+          <div class="progress-text" id="progressText">Starting…</div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+
+        <div class="bulk-results" id="bulkResults"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SIDEBAR: HISTORY -->
+  <div class="sidebar">
+    <div class="card">
+      <h3>
+        Recent lookups
+        <button onclick="clearHistory()">Clear all</button>
+      </h3>
+      <div id="historyList"><div class="history-empty">No lookups yet</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let API_KEY = localStorage.getItem('gemini_api_key') || '';
+  const MODEL_ENDPOINT = key => `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+
+  let lastResult = null;
+
+  // ── API Key setup ─────────────────────────────────────────────
+  function checkApiKey() {
+    if (!API_KEY) {
+      const key = prompt('Enter your Gemini API key (saved locally, never shared):');
+      if (!key) return false;
+      API_KEY = key.trim();
+      localStorage.setItem('gemini_api_key', API_KEY);
+    }
+    return true;
+  }
+
+  function resetApiKey() {
+    localStorage.removeItem('gemini_api_key');
+    API_KEY = '';
+    alert('API key cleared. You will be asked to enter it next time you search.');
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='single')||(i===1&&tab==='bulk')));
+    document.getElementById('tab-single').classList.toggle('active', tab==='single');
+    document.getElementById('tab-bulk').classList.toggle('active', tab==='bulk');
+  }
+
+  // ── Photo preview ─────────────────────────────────────────────
+  document.getElementById('photoInput').addEventListener('change', function() {
+    const file = this.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const p = document.getElementById('preview');
+      p.src = e.target.result; p.style.display = 'block';
+      document.querySelector('.photo-area .icon').style.display = 'none';
+      document.querySelector('.photo-area p').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('productName').addEventListener('keydown', e => { if (e.key==='Enter') lookupSingle(); });
+
+  // ── Build prompt ──────────────────────────────────────────────
+  function buildPrompt(name) {
+    return `Find the weight and package dimensions for this product: "${name}".
+
+Search multiple online retailers: Amazon, Lazada, Shopee, and the official brand website.
+
+Return ONLY a valid JSON object — no markdown, no explanation:
+{
+  "shipping_weight_grams": <gross/shipping weight as a number in grams, convert from oz/kg/lbs if needed — this is weight including packaging>,
+  "net_weight_grams": <net product weight as a number in grams, convert if needed>,
+  "dimensions_cm": "<L>x<W>x<H> in cm",
+  "confidence": "high" | "medium" | "low",
+  "confidence_note": "<one short sentence: where you found it, how reliable, or if estimated>",
+  "sources": [
+    { "name": "<retailer name e.g. Amazon US>", "shipping_weight_grams": <number or null>, "net_weight_grams": <number or null>, "dimensions_cm": "<string or null>", "url": "<url>" },
+    { "name": "...", "shipping_weight_grams": null, "net_weight_grams": null, "dimensions_cm": null, "url": "..." }
+  ]
+}
+
+Rules:
+- Include up to 3 sources in the sources array
+- If shipping weight not listed anywhere, estimate it as net_weight * 1.25 and set confidence to "low"
+- If you cannot find any data, return all nulls with confidence "low"`;
+  }
+
+  // ── Call Gemini ───────────────────────────────────────────────
+  async function callGemini(name, photoFile) {
+    const parts = [];
+    if (photoFile) {
+      const b64 = await fileToBase64(photoFile);
+      parts.push({ inline_data: { mime_type: photoFile.type, data: b64 } });
+    }
+    parts.push({ text: buildPrompt(name) });
+
+    const payload = {
+      contents: [{ parts }],
+      tools: [{ google_search: {} }],
+      generationConfig: { temperature: 0.1 }
+    };
+
+    const res  = await fetch(MODEL_ENDPOINT(API_KEY), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (!res.ok) {
+      // If key looks wrong, clear it so user can re-enter
+      if (res.status === 400 || res.status === 401 || res.status === 403) {
+        localStorage.removeItem('gemini_api_key'); API_KEY = '';
+      }
+      throw new Error(json.error?.message || `API error ${res.status}`);
+    }
+
+    let text = json.candidates[0].content.parts[0].text;
+    text = text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    return JSON.parse(text);
+  }
+
+  // ── Single lookup ─────────────────────────────────────────────
+  async function lookupSingle() {
+    if (!checkApiKey()) return;
+    const name = document.getElementById('productName').value.trim();
+    if (!name) { showError('Please enter a product name.'); return; }
+
+    setLoading(true); hideError();
+    document.getElementById('results').style.display = 'none';
+
+    try {
+      const photoFile = document.getElementById('photoInput').files[0];
+      const data = await callGemini(name, photoFile);
+      lastResult = { name, data };
+      showResults(data);
+      saveHistory(name, data);
+    } catch(err) {
+      showError('Error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function showResults(data) {
+    document.getElementById('resShipping').textContent = data.shipping_weight_grams ?? 'not found';
+    document.getElementById('resNet').textContent      = data.net_weight_grams      ?? 'not found';
+    document.getElementById('resDims').textContent     = data.dimensions_cm         ?? 'not found';
+
+    // Best source
+    const best = (data.sources || []).find(s => s.url) || {};
+    document.getElementById('resBestSource').textContent = best.name || 'not found';
+    const urlEl = document.getElementById('resBestSourceUrl');
+    if (best.url) {
+      urlEl.innerHTML = `<a href="${best.url}" target="_blank" style="color:#4f46e5;font-size:11px;word-break:break-all">${best.url}</a>`;
+    } else { urlEl.textContent = ''; }
+
+    // Confidence
+    const dot  = document.getElementById('confDot');
+    const note = document.getElementById('confNote');
+    dot.className = 'conf-dot conf-' + (data.confidence || 'medium');
+    note.textContent = data.confidence_note || '';
+
+    // Sources list
+    const list = document.getElementById('sourcesList');
+    list.innerHTML = '';
+    (data.sources || []).forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'source-row';
+      div.innerHTML = `
+        <div class="sname">${s.name || 'Unknown'}</div>
+        <div class="sdata">
+          <span>Shipping: <strong>${s.shipping_weight_grams != null ? s.shipping_weight_grams+'g' : '—'}</strong></span>
+          <span>Net: <strong>${s.net_weight_grams != null ? s.net_weight_grams+'g' : '—'}</strong></span>
+          <span>Dims: <strong>${s.dimensions_cm || '—'}</strong></span>
+        </div>
+        ${s.url ? `<a href="${s.url}" target="_blank">${s.url}</a>` : ''}
+      `;
+      list.appendChild(div);
+    });
+
+    document.getElementById('results').style.display = 'block';
+  }
+
+  // ── Copy buttons ──────────────────────────────────────────────
+  function copyWeight() {
+    const v = document.getElementById('resShipping').textContent;
+    navigator.clipboard.writeText(v).then(() => flash('resShipping'));
+  }
+  function copyDims() {
+    const v = document.getElementById('resDims').textContent;
+    navigator.clipboard.writeText(v).then(() => flash('resDims'));
+  }
+  function copyAll() {
+    if (!lastResult) return;
+    const d = lastResult.data;
+    const text = `${lastResult.name}\nShipping weight: ${d.shipping_weight_grams ?? ''}g\nNet weight: ${d.net_weight_grams ?? ''}g\nDimensions: ${d.dimensions_cm ?? ''}\nConfidence: ${d.confidence} — ${d.confidence_note}`;
+    navigator.clipboard.writeText(text);
+  }
+  function flash(id) {
+    const el = document.getElementById(id);
+    el.style.transition = 'opacity 0.1s';
+    el.style.opacity = '0.3';
+    setTimeout(() => el.style.opacity = '1', 200);
+  }
+
+  // ── Bulk lookup ───────────────────────────────────────────────
+  async function runBulk() {
+    if (!checkApiKey()) return;
+    const lines = document.getElementById('bulkInput').value.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+
+    document.getElementById('bulkBtn').disabled = true;
+    document.getElementById('bulkResults').innerHTML = '';
+    const prog = document.getElementById('bulkProgress');
+    prog.style.display = 'block';
+
+    for (let i = 0; i < lines.length; i++) {
+      const name = lines[i];
+      document.getElementById('progressText').textContent = `Looking up ${i+1} of ${lines.length}: ${name}`;
+      document.getElementById('progressFill').style.width = ((i / lines.length) * 100) + '%';
+
+      let html = '';
+      try {
+        const data = await callGemini(name, null);
+        saveHistory(name, data);
+        html = `
+          <div class="bulk-item">
+            <div class="bi-name">
+              ${name}
+              <button class="btn-sm btn-copy bulk-copy-btn" onclick="navigator.clipboard.writeText('${(data.shipping_weight_grams||'')}g | ${data.dimensions_cm||''}')">📋</button>
+            </div>
+            <div class="bi-data">
+              <span>Shipping: <strong>${data.shipping_weight_grams != null ? data.shipping_weight_grams+'g' : '—'}</strong></span>
+              <span>Net: <strong>${data.net_weight_grams != null ? data.net_weight_grams+'g' : '—'}</strong></span>
+              <span>Dims: <strong>${data.dimensions_cm || '—'}</strong></span>
+            </div>
+            <div class="bi-conf">${data.confidence?.toUpperCase()} — ${data.confidence_note || ''}</div>
+          </div>`;
+      } catch(err) {
+        html = `<div class="bulk-item"><div class="bi-name">${name}</div><div class="bi-conf" style="color:#e74c3c">Error: ${err.message}</div></div>`;
+      }
+
+      document.getElementById('bulkResults').insertAdjacentHTML('beforeend', html);
+      if (i < lines.length - 1) await sleep(2000); // avoid rate limiting
+    }
+
+    document.getElementById('progressText').textContent = `Done! ${lines.length} products looked up.`;
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('bulkBtn').disabled = false;
+  }
+
+  // ── History ───────────────────────────────────────────────────
+  function saveHistory(name, data) {
+    let hist = getHistory();
+    hist = hist.filter(h => h.name !== name); // remove duplicate
+    hist.unshift({ name, shipping: data.shipping_weight_grams, net: data.net_weight_grams, dims: data.dimensions_cm, confidence: data.confidence, ts: Date.now() });
+    if (hist.length > 20) hist = hist.slice(0, 20);
+    localStorage.setItem('specs_history', JSON.stringify(hist));
+    renderHistory();
+  }
+
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem('specs_history') || '[]'); } catch { return []; }
+  }
+
+  function renderHistory() {
+    const hist = getHistory();
+    const el   = document.getElementById('historyList');
+    if (!hist.length) { el.innerHTML = '<div class="history-empty">No lookups yet</div>'; return; }
+    el.innerHTML = hist.map(h => `
+      <div class="hist-item" onclick="loadFromHistory('${h.name.replace(/'/g,"\\'")}')">
+        <div class="hist-name">${h.name}</div>
+        <div class="hist-meta">${h.shipping != null ? h.shipping+'g' : '—'} · ${h.dims || '—'}</div>
+      </div>
+    `).join('');
+  }
+
+  function loadFromHistory(name) {
+    document.getElementById('productName').value = name;
+    switchTab('single');
+    lookupSingle();
+  }
+
+  function clearHistory() {
+    localStorage.removeItem('specs_history');
+    renderHistory();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function setLoading(on) {
+    document.getElementById('spinner').style.display   = on ? 'block' : 'none';
+    document.getElementById('searchBtn').disabled      = on;
+  }
+  function showError(msg) {
+    const b = document.getElementById('errorBox');
+    b.textContent = msg; b.style.display = 'block';
+  }
+  function hideError() { document.getElementById('errorBox').style.display = 'none'; }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function fileToBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  // Init
+  renderHistory();
+</script>
+</body>
+</html>
