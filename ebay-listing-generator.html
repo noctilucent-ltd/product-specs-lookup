@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eBay Listing Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .layout {
+      display: flex;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+
+    .main { flex: 1; min-width: 0; }
+    .sidebar { width: 280px; flex-shrink: 0; }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+
+    h1 { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 11px 13px;
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 14px;
+      font-family: inherit;
+      color: #1a1a2e;
+    }
+    input[type="text"]:focus, input[type="number"]:focus,
+    textarea:focus, select:focus { border-color: #0064d2; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* Mode selector */
+    .mode-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .mode-card {
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-card:hover { border-color: #0064d2; background: #f5f9ff; }
+    .mode-card.active { border-color: #0064d2; background: #f0f6ff; }
+    .mode-card .micon { font-size: 22px; margin-bottom: 4px; }
+    .mode-card .mtitle { font-size: 12px; font-weight: 700; color: #1a1a2e; }
+    .mode-card .mdesc { font-size: 11px; color: #999; margin-top: 2px; }
+
+    /* Bundle items */
+    .bundle-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .bundle-item input[type="text"] { margin-bottom: 0; }
+    .bundle-item input[type="number"] { margin-bottom: 0; width: 70px; text-align: center; }
+    .btn-remove {
+      width: 32px; height: 32px;
+      border: none; border-radius: 8px;
+      background: #fff0f0; color: #e11d48;
+      font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .btn-remove:hover { background: #ffd0dc; }
+    .btn-add-item {
+      width: 100%;
+      padding: 9px;
+      border: 2px dashed #d0e4ff;
+      border-radius: 10px;
+      background: #f5f9ff;
+      color: #0064d2;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 14px;
+      transition: all 0.15s;
+    }
+    .btn-add-item:hover { background: #e8f0ff; border-color: #0064d2; }
+
+    /* Photo */
+    .photo-area {
+      border: 2px dashed #d8d8d8;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .photo-area:hover { border-color: #0064d2; background: #f5f9ff; }
+    .photo-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .photo-area .icon { font-size: 20px; margin-bottom: 2px; }
+    .photo-area p { font-size: 12px; color: #999; }
+    .photo-area p span { color: #0064d2; font-weight: 600; }
+    #preview { display: none; width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin: 6px auto 0; }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: #0064d2;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover:not(:disabled) { background: #0052b0; }
+    .btn:disabled { background: #90b8e8; cursor: not-allowed; }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-copy { background: #e8f0ff; color: #0064d2; }
+    .btn-copy:hover { background: #d0e4ff; }
+    .btn-save-tpl { background: #f0fff4; color: #16a34a; }
+    .btn-save-tpl:hover { background: #dcfce7; }
+
+    /* Spinner */
+    .spinner {
+      display: none;
+      text-align: center;
+      padding: 20px 0 4px;
+      color: #888;
+      font-size: 13px;
+    }
+    .spinner::before {
+      content: '';
+      display: block;
+      width: 32px; height: 32px;
+      border: 3px solid #e8e8e8;
+      border-top-color: #0064d2;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      margin-top: 14px;
+      background: #fff0f0; border: 1.5px solid #ffd0d0;
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 12px; color: #c0392b; display: none;
+    }
+
+    /* Results */
+    .results { display: none; margin-top: 22px; border-top: 2px solid #f5f5f5; padding-top: 20px; }
+
+    .result-section {
+      margin-bottom: 16px;
+    }
+    .result-section-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+    }
+    .result-label {
+      font-size: 11px; font-weight: 700; color: #888;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    /* Title box */
+    .title-box {
+      background: #f0f6ff;
+      border: 2px solid #d0e4ff;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a2e;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .title-char-count {
+      font-size: 11px; color: #aaa; margin-top: 4px; text-align: right;
+    }
+    .title-char-count.over { color: #e11d48; font-weight: 700; }
+
+    /* Alternative titles */
+    .alt-titles-label {
+      font-size: 11px; font-weight: 700; color: #aaa;
+      text-transform: uppercase; letter-spacing: 0.4px;
+      margin: 10px 0 6px;
+    }
+    .alt-title {
+      display: flex; align-items: center; gap: 10px;
+      background: #fafafa; border: 1.5px solid #efefef;
+      border-radius: 9px; padding: 10px 13px;
+      margin-bottom: 6px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .alt-title:hover { border-color: #0064d2; background: #f0f6ff; }
+    .alt-title .at-text { flex: 1; font-size: 13px; color: #333; font-weight: 500; }
+    .alt-title .at-len { font-size: 11px; color: #aaa; white-space: nowrap; }
+    .alt-title .at-use {
+      font-size: 11px; font-weight: 700; color: #0064d2;
+      white-space: nowrap; opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .alt-title:hover .at-use { opacity: 1; }
+
+    /* Description box */
+    .desc-box {
+      background: #fafafa;
+      border: 2px solid #efefef;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #333;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Keywords / Category */
+    .tags-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .tag {
+      background: #f0f6ff;
+      color: #0064d2;
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .category-box {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    /* Action row */
+    .action-row {
+      display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+    }
+    .action-row .btn-sm { flex: 1; text-align: center; padding: 9px 12px; font-size: 13px; }
+
+    /* Sidebar */
+    .sidebar .card { padding: 20px; }
+    .sidebar h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .sidebar h3 button { font-size: 11px; font-weight: 600; color: #aaa; background: none; border: none; cursor: pointer; }
+    .sidebar h3 button:hover { color: #ef4444; }
+    .empty-state { font-size: 12px; color: #bbb; text-align: center; padding: 16px 0; }
+
+    /* Templates */
+    .tpl-item {
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-bottom: 1px solid #f5f5f5;
+      position: relative;
+    }
+    .tpl-item:last-child { border-bottom: none; }
+    .tpl-item:hover { background: #f0f6ff; }
+    .tpl-name { font-size: 13px; font-weight: 600; color: #333; }
+    .tpl-meta { font-size: 11px; color: #aaa; margin-top: 2px; }
+    .tpl-delete {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: #ddd; cursor: pointer; font-size: 14px;
+      padding: 4px;
+    }
+    .tpl-delete:hover { color: #e11d48; }
+
+    /* Section visibility */
+    .section { margin-bottom: 14px; }
+    [data-mode] { display: none; }
+    [data-mode].visible { display: block; }
+
+    @media (max-width: 750px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; }
+      .mode-selector { grid-template-columns: 1fr; }
+      .bundle-item { grid-template-columns: 1fr auto auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="card">
+      <h1>🏷️ eBay Listing Generator</h1>
+      <p class="subtitle">AI-powered titles, descriptions &amp; keywords for eBay UK &nbsp;·&nbsp; <span style="color:#0064d2;cursor:pointer;font-size:12px" onclick="resetApiKey()">🔑 Reset API key</span></p>
+
+      <!-- MODE SELECTOR -->
+      <div class="mode-selector">
+        <div class="mode-card active" id="mode-single" onclick="setMode('single')">
+          <div class="micon">📦</div>
+          <div class="mtitle">Single</div>
+          <div class="mdesc">One product</div>
+        </div>
+        <div class="mode-card" id="mode-multipack" onclick="setMode('multipack')">
+          <div class="micon">📦📦</div>
+          <div class="mtitle">Multi-pack</div>
+          <div class="mdesc">Same product × qty</div>
+        </div>
+        <div class="mode-card" id="mode-bundle" onclick="setMode('bundle')">
+          <div class="micon">🎁</div>
+          <div class="mtitle">Mixed Bundle</div>
+          <div class="mdesc">Different products</div>
+        </div>
+      </div>
+
+      <!-- SINGLE MODE -->
+      <div data-mode="single" class="visible">
+        <div class="section">
+          <label for="singleName">Product name</label>
+          <input type="text" id="singleName" placeholder="e.g. Kwan Loong Medicated Oil 57ml" />
+        </div>
+        <div class="section">
+          <label for="singleDetails">Extra details <span style="font-weight:400;color:#bbb;text-transform:none">(optional — ingredients, use, origin…)</span></label>
+          <textarea id="singleDetails" placeholder="e.g. Relieves muscle pain and headaches. Made in Malaysia. Imported from Thailand."></textarea>
+        </div>
+      </div>
+
+      <!-- MULTI-PACK MODE -->
+      <div data-mode="multipack">
+        <div class="section">
+          <label for="mpName">Product name</label>
+          <input type="text" id="mpName" placeholder="e.g. Tiger Balm Red 30g" />
+        </div>
+        <div class="section" style="display:flex;gap:10px;align-items:flex-end">
+          <div style="flex:1">
+            <label for="mpQty">Pack quantity</label>
+            <input type="number" id="mpQty" value="2" min="2" max="100" style="margin-bottom:0" />
+          </div>
+          <div style="flex:1">
+            <label for="mpVariant">Variant / flavour <span style="font-weight:400;color:#bbb;text-transform:none">(optional)</span></label>
+            <input type="text" id="mpVariant" placeholder="e.g. Original, Extra Strength" style="margin-bottom:0" />
+          </div>
+        </div>
+        <div class="section" style="margin-top:14px">
+          <label for="mpDetails">Extra details <span style="font-weight:400;color:#bbb;text-transform:none">(optional)</span></label>
+          <textarea id="mpDetails" placeholder="e.g. Authentic Thai import. Relieves muscle aches."></textarea>
+        </div>
+      </div>
+
+      <!-- MIXED BUNDLE MODE -->
+      <div data-mode="bundle">
+        <div class="section">
+          <label for="bundleName">Bundle name / theme <span style="font-weight:400;color:#bbb;text-transform:none">(optional — e.g. Thai Muscle Relief Kit)</span></label>
+          <input type="text" id="bundleName" placeholder="e.g. Thai Muscle Relief Kit" />
+        </div>
+        <label>Bundle contents</label>
+        <div id="bundleItems">
+          <div class="bundle-item" data-idx="0">
+            <input type="text" placeholder="Product name (e.g. Tiger Balm Red 30g)" class="bundle-product" />
+            <input type="number" value="1" min="1" max="99" class="bundle-qty" title="Quantity" />
+            <button class="btn-remove" onclick="removeBundleItem(this)" title="Remove">×</button>
+          </div>
+          <div class="bundle-item" data-idx="1">
+            <input type="text" placeholder="Product name (e.g. Kwan Loong Oil 57ml)" class="bundle-product" />
+            <input type="number" value="1" min="1" max="99" class="bundle-qty" title="Quantity" />
+            <button class="btn-remove" onclick="removeBundleItem(this)" title="Remove">×</button>
+          </div>
+        </div>
+        <button class="btn-add-item" onclick="addBundleItem()">+ Add another product</button>
+        <div class="section">
+          <label for="bundleDetails">Extra details <span style="font-weight:400;color:#bbb;text-transform:none">(optional)</span></label>
+          <textarea id="bundleDetails" placeholder="e.g. Perfect gift set. All authentic Thai imports."></textarea>
+        </div>
+      </div>
+
+      <!-- PHOTO (all modes) -->
+      <label>Product photo <span style="font-weight:400;color:#bbb;text-transform:none">(optional)</span></label>
+      <div class="photo-area">
+        <input type="file" id="photoInput" accept="image/*" />
+        <div class="icon" id="photoIcon">🖼️</div>
+        <p id="photoText"><span>Click to upload</span> or drag here</p>
+        <img id="preview" alt="preview" />
+      </div>
+
+      <button class="btn" id="generateBtn" onclick="generate()">✨ Generate eBay Listing</button>
+
+      <div class="spinner" id="spinner">Generating with Gemini…</div>
+      <div class="error-box" id="errorBox"></div>
+
+      <!-- RESULTS -->
+      <div class="results" id="results">
+
+        <div class="result-section">
+          <div class="result-section-header">
+            <div class="result-label">📌 eBay Title</div>
+            <button class="btn-sm btn-copy" onclick="copyField('titleText', this)">📋 Copy</button>
+          </div>
+          <div class="title-box" id="titleText">—</div>
+          <div class="title-char-count" id="titleCharCount"></div>
+          <div id="altTitlesWrap" style="display:none">
+            <div class="alt-titles-label">👇 Don't like it? Click an alternative:</div>
+            <div id="altTitlesList"></div>
+          </div>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-header">
+            <div class="result-label">📝 Description</div>
+            <button class="btn-sm btn-copy" onclick="copyField('descText', this)">📋 Copy</button>
+          </div>
+          <div class="desc-box" id="descText">—</div>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-header">
+            <div class="result-label">🗂️ Suggested Category</div>
+            <button class="btn-sm btn-copy" onclick="copyField('categoryText', this)">📋 Copy</button>
+          </div>
+          <div class="category-box" id="categoryText">—</div>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-header">
+            <div class="result-label">🔍 Search Keywords</div>
+            <button class="btn-sm btn-copy" onclick="copyKeywords(this)">📋 Copy</button>
+          </div>
+          <div class="tags-row" id="keywordTags"></div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn-sm btn-copy" onclick="copyEverything(this)" style="flex:2">📋 Copy everything</button>
+          <button class="btn-sm btn-save-tpl" onclick="saveTemplate()" style="flex:1">💾 Save template</button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="card">
+      <h3>
+        Saved templates
+        <button onclick="clearTemplates()">Clear all</button>
+      </h3>
+      <div id="templateList"><div class="empty-state">No templates saved yet</div></div>
+    </div>
+
+    <div class="card" style="background:#f0f6ff;border:1.5px solid #d0e4ff;">
+      <div style="font-size:12px;font-weight:700;color:#0052b0;margin-bottom:8px;">💡 Tips for better titles</div>
+      <ul style="font-size:12px;color:#555;padding-left:16px;line-height:1.9">
+        <li>Include size &amp; weight (57ml, 30g)</li>
+        <li>Mention "Thai Import" or "Authentic"</li>
+        <li>Add the use case (Muscle Relief, Headache)</li>
+        <li>Never use ALL CAPS or !!!!</li>
+        <li>80 character limit on eBay</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let API_KEY = localStorage.getItem('gemini_api_key') || '';
+  const MODEL_ENDPOINT = key => `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+
+  let currentMode = 'single';
+  let lastResult  = null;
+
+  // ── API Key ───────────────────────────────────────────────────
+  function checkApiKey() {
+    if (!API_KEY) {
+      const key = prompt('Enter your Gemini API key (saved locally, never shared):');
+      if (!key) return false;
+      API_KEY = key.trim();
+      localStorage.setItem('gemini_api_key', API_KEY);
+    }
+    return true;
+  }
+  function resetApiKey() {
+    localStorage.removeItem('gemini_api_key');
+    API_KEY = '';
+    alert('API key cleared.');
+  }
+
+  // ── Mode ──────────────────────────────────────────────────────
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('mode-' + mode).classList.add('active');
+    document.querySelectorAll('[data-mode]').forEach(el => {
+      el.classList.toggle('visible', el.dataset.mode === mode);
+    });
+  }
+
+  // ── Bundle items ──────────────────────────────────────────────
+  function addBundleItem() {
+    const container = document.getElementById('bundleItems');
+    const div = document.createElement('div');
+    div.className = 'bundle-item';
+    div.innerHTML = `
+      <input type="text" placeholder="Product name" class="bundle-product" />
+      <input type="number" value="1" min="1" max="99" class="bundle-qty" title="Quantity" />
+      <button class="btn-remove" onclick="removeBundleItem(this)" title="Remove">×</button>
+    `;
+    container.appendChild(div);
+  }
+  function removeBundleItem(btn) {
+    const items = document.querySelectorAll('#bundleItems .bundle-item');
+    if (items.length <= 1) return;
+    btn.closest('.bundle-item').remove();
+  }
+
+  // ── Photo ─────────────────────────────────────────────────────
+  document.getElementById('photoInput').addEventListener('change', function() {
+    const file = this.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const p = document.getElementById('preview');
+      p.src = e.target.result; p.style.display = 'block';
+      document.getElementById('photoIcon').style.display = 'none';
+      document.getElementById('photoText').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ── Build prompt ──────────────────────────────────────────────
+  function buildPrompt() {
+    let productDescription = '';
+
+    if (currentMode === 'single') {
+      const name    = document.getElementById('singleName').value.trim();
+      const details = document.getElementById('singleDetails').value.trim();
+      productDescription = `Product: ${name}${details ? '\nExtra details: ' + details : ''}`;
+
+    } else if (currentMode === 'multipack') {
+      const name    = document.getElementById('mpName').value.trim();
+      const qty     = document.getElementById('mpQty').value;
+      const variant = document.getElementById('mpVariant').value.trim();
+      const details = document.getElementById('mpDetails').value.trim();
+      productDescription = `Product: ${name}\nPack quantity: ${qty} units${variant ? '\nVariant: ' + variant : ''}${details ? '\nExtra details: ' + details : ''}`;
+
+    } else if (currentMode === 'bundle') {
+      const bundleName = document.getElementById('bundleName').value.trim();
+      const details    = document.getElementById('bundleDetails').value.trim();
+      const items = [...document.querySelectorAll('#bundleItems .bundle-item')].map(row => {
+        const name = row.querySelector('.bundle-product').value.trim();
+        const qty  = row.querySelector('.bundle-qty').value;
+        return name ? `  - ${qty}× ${name}` : null;
+      }).filter(Boolean).join('\n');
+      productDescription = `Bundle type: Mixed bundle${bundleName ? '\nBundle name/theme: ' + bundleName : ''}\nContents:\n${items}${details ? '\nExtra details: ' + details : ''}`;
+    }
+
+    return `You are an expert eBay UK seller specialising in Thai and Asian health, beauty, and wellness products.
+
+Create an optimised eBay UK listing for the following product:
+
+${productDescription}
+
+Return ONLY a valid JSON object — no markdown, no explanation:
+{
+  "title": "<eBay title — MUST be 80 characters or fewer, keyword-rich, natural English, no ALL CAPS, no special characters like *, !, |>",
+  "title_alternatives": [
+    "<alternative title option 2 — also max 80 chars>",
+    "<alternative title option 3 — also max 80 chars>"
+  ],
+  "description": "<Full eBay description. Use plain text with clear sections. Start with a short intro sentence. Then bullet points for key features (use • character). Include: what it is, key benefits, size/quantity, origin/authenticity, and a note about postage. End with a short seller note. Keep it professional and trustworthy. Do NOT use HTML.>",
+  "category": "<Specific eBay UK category path, e.g. 'Health & Beauty > Natural & Alternative Remedies > Aromatherapy'>",
+  "item_specifics": {
+    "Brand": "<brand name>",
+    "Type": "<product type>",
+    "Country of Origin": "<country>",
+    "Unit Quantity": "<e.g. 1, 2, 3, Pack of 3>",
+    "Size": "<e.g. 57ml, 30g>"
+  },
+  "keywords": ["<keyword1>", "<keyword2>", "<keyword3>", "<keyword4>", "<keyword5>", "<keyword6>", "<keyword7>", "<keyword8>"]
+}
+
+Rules:
+- The title MUST be 80 characters or fewer — count carefully
+- Make the title appeal to UK buyers searching on eBay UK
+- For bundles and multi-packs, clearly mention the quantity in the title
+- Keywords should be real search terms UK buyers would use
+- Description should be ready to paste into eBay — professional and clear`;
+  }
+
+  // ── Call Gemini ───────────────────────────────────────────────
+  async function callGemini(photoFile) {
+    const parts = [];
+    if (photoFile) {
+      const b64 = await fileToBase64(photoFile);
+      parts.push({ inline_data: { mime_type: photoFile.type, data: b64 } });
+    }
+    parts.push({ text: buildPrompt() });
+
+    const payload = {
+      contents: [{ parts }],
+      tools: [{ google_search: {} }],
+      generationConfig: { temperature: 0.3 }
+    };
+
+    const res  = await fetch(MODEL_ENDPOINT(API_KEY), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (!res.ok) {
+      if ([400, 401, 403].includes(res.status)) { localStorage.removeItem('gemini_api_key'); API_KEY = ''; }
+      throw new Error(json.error?.message || `API error ${res.status}`);
+    }
+
+    let text = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    text = text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) text = match[0];
+    return JSON.parse(text);
+  }
+
+  // ── Generate ──────────────────────────────────────────────────
+  async function generate() {
+    if (!checkApiKey()) return;
+
+    // Validate inputs
+    if (currentMode === 'single' && !document.getElementById('singleName').value.trim()) {
+      showError('Please enter a product name.'); return;
+    }
+    if (currentMode === 'multipack' && !document.getElementById('mpName').value.trim()) {
+      showError('Please enter a product name.'); return;
+    }
+    if (currentMode === 'bundle') {
+      const items = [...document.querySelectorAll('.bundle-product')].map(i => i.value.trim()).filter(Boolean);
+      if (items.length < 1) { showError('Please enter at least one product in the bundle.'); return; }
+    }
+
+    setLoading(true); hideError();
+    document.getElementById('results').style.display = 'none';
+
+    try {
+      const photoFile = document.getElementById('photoInput').files[0];
+      const data = await callGemini(photoFile);
+      lastResult = data;
+      showResults(data);
+    } catch(err) {
+      showError('Error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function showResults(data) {
+    // Title
+    const title = data.title || '';
+    document.getElementById('titleText').textContent = title;
+    const charEl = document.getElementById('titleCharCount');
+    charEl.textContent = `${title.length} / 80 characters`;
+    charEl.className = 'title-char-count' + (title.length > 80 ? ' over' : '');
+
+    // Alternative titles
+    const alts = data.title_alternatives || [];
+    const altWrap = document.getElementById('altTitlesWrap');
+    const altList = document.getElementById('altTitlesList');
+    altList.innerHTML = '';
+    if (alts.length) {
+      alts.forEach(alt => {
+        const div = document.createElement('div');
+        div.className = 'alt-title';
+        div.innerHTML = `
+          <span class="at-text">${alt}</span>
+          <span class="at-len">${alt.length}/80</span>
+          <span class="at-use">Use this ›</span>
+        `;
+        div.onclick = () => {
+          document.getElementById('titleText').textContent = alt;
+          lastResult.title = alt;
+          charEl.textContent = `${alt.length} / 80 characters`;
+          charEl.className = 'title-char-count' + (alt.length > 80 ? ' over' : '');
+          // Highlight selected
+          document.querySelectorAll('.alt-title').forEach(d => d.style.background = '');
+          div.style.background = '#e8f0ff';
+        };
+        altList.appendChild(div);
+      });
+      altWrap.style.display = 'block';
+    } else {
+      altWrap.style.display = 'none';
+    }
+
+    // Description
+    document.getElementById('descText').textContent = data.description || '';
+
+    // Category
+    document.getElementById('categoryText').textContent = data.category || '—';
+
+    // Keywords
+    const tagsEl = document.getElementById('keywordTags');
+    tagsEl.innerHTML = '';
+    (data.keywords || []).forEach(kw => {
+      const span = document.createElement('span');
+      span.className = 'tag';
+      span.textContent = kw;
+      tagsEl.appendChild(span);
+    });
+
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Copy helpers ──────────────────────────────────────────────
+  function copyField(id, btn) {
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(() => flashBtn(btn));
+  }
+  function copyKeywords(btn) {
+    if (!lastResult) return;
+    const text = (lastResult.keywords || []).join(', ');
+    navigator.clipboard.writeText(text).then(() => flashBtn(btn));
+  }
+  function copyEverything(btn) {
+    if (!lastResult) return;
+    const d = lastResult;
+    const lines = [
+      '=== eBay TITLE ===',
+      d.title || '',
+      '',
+      '=== DESCRIPTION ===',
+      d.description || '',
+      '',
+      '=== CATEGORY ===',
+      d.category || '',
+      '',
+      '=== KEYWORDS ===',
+      (d.keywords || []).join(', ')
+    ];
+    navigator.clipboard.writeText(lines.join('\n')).then(() => flashBtn(btn));
+  }
+  function flashBtn(btn) {
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }
+
+  // ── Templates ─────────────────────────────────────────────────
+  function saveTemplate() {
+    if (!lastResult) return;
+    const name = prompt('Save as template — enter a name:');
+    if (!name) return;
+    let templates = getTemplates();
+    templates.unshift({
+      id: Date.now(),
+      name: name.trim(),
+      mode: currentMode,
+      data: lastResult,
+      ts: Date.now()
+    });
+    if (templates.length > 20) templates = templates.slice(0, 20);
+    localStorage.setItem('ebay_listing_templates', JSON.stringify(templates));
+    renderTemplates();
+    alert(`Template "${name}" saved!`);
+  }
+
+  function getTemplates() {
+    try { return JSON.parse(localStorage.getItem('ebay_listing_templates') || '[]'); } catch { return []; }
+  }
+
+  function renderTemplates() {
+    const templates = getTemplates();
+    const el = document.getElementById('templateList');
+    if (!templates.length) { el.innerHTML = '<div class="empty-state">No templates saved yet</div>'; return; }
+    el.innerHTML = templates.map(t => `
+      <div class="tpl-item" onclick="loadTemplate(${t.id})">
+        <div class="tpl-name">${t.name}</div>
+        <div class="tpl-meta">${t.mode} · ${new Date(t.ts).toLocaleDateString('en-GB')}</div>
+        <button class="tpl-delete" onclick="deleteTemplate(event,${t.id})">×</button>
+      </div>
+    `).join('');
+  }
+
+  function loadTemplate(id) {
+    const templates = getTemplates();
+    const t = templates.find(t => t.id === id);
+    if (!t) return;
+    lastResult = t.data;
+    setMode(t.mode);
+    showResults(t.data);
+  }
+
+  function deleteTemplate(e, id) {
+    e.stopPropagation();
+    let templates = getTemplates().filter(t => t.id !== id);
+    localStorage.setItem('ebay_listing_templates', JSON.stringify(templates));
+    renderTemplates();
+  }
+
+  function clearTemplates() {
+    if (!confirm('Clear all saved templates?')) return;
+    localStorage.removeItem('ebay_listing_templates');
+    renderTemplates();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function setLoading(on) {
+    document.getElementById('spinner').style.display    = on ? 'block' : 'none';
+    document.getElementById('generateBtn').disabled     = on;
+    document.getElementById('generateBtn').textContent  = on ? '⏳ Generating…' : '✨ Generate eBay Listing';
+  }
+  function showError(msg) {
+    const b = document.getElementById('errorBox');
+    b.textContent = msg; b.style.display = 'block';
+  }
+  function hideError() { document.getElementById('errorBox').style.display = 'none'; }
+  function fileToBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  // Init
+  renderTemplates();
+
+</script>
+</body>
+</html>
