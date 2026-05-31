@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3PL HUB</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a14;
+      --card: #12121f;
+      --card2: #1a1a2e;
+      --border: #252540;
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --green: #10b981;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --text: #e8e8f0;
+      --muted: #6b7280;
+      --dim: #4b4b6b;
+    }
+
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 900; color: white;
+    }
+    .logo-name { font-size: 17px; font-weight: 800; letter-spacing: 1px; }
+    .logo-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .rate-pill {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 5px 13px;
+      font-size: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .rate-val { font-weight: 700; color: var(--green); }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── LAYOUT ── */
+    .layout { display: grid; grid-template-columns: 220px 1fr 310px; height: calc(100vh - 58px); }
+
+    /* ── LEFT NAV ── */
+    .nav {
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px 0;
+    }
+    .nav-section { margin-bottom: 20px; }
+    .nav-heading {
+      font-size: 9px; font-weight: 800; color: var(--dim);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      padding: 0 16px; margin-bottom: 4px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px;
+      font-size: 13px; color: var(--muted);
+      cursor: pointer; transition: all 0.15s;
+      border-left: 3px solid transparent;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: var(--card2); color: var(--text); border-left-color: var(--border); }
+    .nav-item.active { background: rgba(99,102,241,0.12); color: var(--accent); border-left-color: var(--accent); }
+    .nav-item .ni-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px; }
+    .nb-orange { background: rgba(245,158,11,0.2); color: var(--orange); }
+    .nb-red    { background: rgba(239,68,68,0.2);  color: var(--red); }
+    .nb-green  { background: rgba(16,185,129,0.2); color: var(--green); }
+
+    /* External link style */
+    .nav-item.ext::after { content: '↗'; font-size: 10px; color: var(--dim); margin-left: auto; }
+    .nav-divider { height: 1px; background: var(--border); margin: 8px 16px; }
+
+    /* ── MAIN ── */
+    .main { overflow-y: auto; padding: 20px; }
+
+    /* Greeting */
+    .greeting { margin-bottom: 20px; }
+    .greeting h2 { font-size: 21px; font-weight: 700; }
+    .greeting p  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    /* Stats row */
+    .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .stat:hover { border-color: var(--accent); }
+    .stat .st-label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+    .stat .st-val   { font-size: 24px; font-weight: 700; }
+    .stat .st-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .stat .st-sub.up   { color: var(--green); }
+    .stat .st-sub.down { color: var(--red); }
+    .stat .st-sub.warn { color: var(--orange); }
+
+    /* Section title */
+    .sec-title {
+      font-size: 13px; font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sec-title a { font-size: 11px; color: var(--accent); text-decoration: none; font-weight: 600; }
+    .sec-title a:hover { text-decoration: underline; }
+
+    /* Quick links grid */
+    .links-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 20px; }
+    .link-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 14px 10px;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: block;
+    }
+    .link-card:hover { border-color: var(--accent); background: rgba(99,102,241,0.07); transform: translateY(-1px); }
+    .link-card .lc-icon { font-size: 22px; margin-bottom: 6px; }
+    .link-card .lc-name { font-size: 11px; font-weight: 700; color: var(--text); }
+    .link-card .lc-sub  { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* Tools grid */
+    .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .tool-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .tool-card:hover { border-color: var(--accent); background: rgba(99,102,241,0.06); }
+    .tool-card .tc-icon { font-size: 24px; flex-shrink: 0; }
+    .tool-card .tc-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .tool-card .tc-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+    .tool-card .tc-arr  { margin-left: auto; color: var(--dim); font-size: 14px; flex-shrink: 0; }
+
+    /* Bundles */
+    .bundle-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+    .bundle-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      display: flex; align-items: center; gap: 12px;
+      transition: border-color 0.15s;
+    }
+    .bundle-row:hover { border-color: var(--accent); }
+    .bundle-row .br-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .bundle-row .br-comp { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .avail { font-size: 22px; font-weight: 700; min-width: 40px; text-align: center; }
+    .avail.ok   { color: var(--green); }
+    .avail.low  { color: var(--orange); }
+    .avail.out  { color: var(--red); }
+    .avail-label { font-size: 9px; color: var(--muted); text-align: center; text-transform: uppercase; font-weight: 700; }
+    .status-pill { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
+    .sp-active { background: rgba(16,185,129,0.15); color: var(--green); }
+    .sp-paused { background: rgba(107,114,128,0.15); color: var(--muted); }
+
+    /* Sales log quick entry */
+    .log-entry {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .log-entry .le-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+    .log-form { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+    .log-select, .log-qty {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .log-select:focus, .log-qty:focus { border-color: var(--accent); }
+    .log-qty { width: 70px; text-align: center; }
+    .log-select option { background: var(--card2); }
+    .btn-log {
+      padding: 9px 16px;
+      background: var(--green);
+      color: white;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn-log:hover { opacity: 0.85; }
+
+    /* Activity */
+    .activity { display: flex; flex-direction: column; gap: 5px; }
+    .act-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px;
+    }
+    .act-row .ar-icon { font-size: 14px; }
+    .act-row .ar-text { flex: 1; color: var(--text); }
+    .act-row .ar-time { font-size: 10px; color: var(--muted); }
+    .act-row.sale .ar-qty { color: var(--red); font-weight: 700; }
+    .act-row.restock .ar-qty { color: var(--green); font-weight: 700; }
+
+    /* ── RIGHT CHAT ── */
+    .chat-panel {
+      background: var(--card);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      height: calc(100vh - 58px);
+      position: sticky;
+      top: 58px;
+      overflow: hidden;
+    }
+    .chat-top {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ai-ava {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .chat-top .ct-name { font-size: 13px; font-weight: 700; }
+    .chat-top .ct-sub  { font-size: 11px; color: var(--green); }
+    .chat-top .ct-key  {
+      margin-left: auto; font-size: 10px; color: var(--dim);
+      cursor: pointer; text-decoration: underline;
+    }
+    .chat-top .ct-key:hover { color: var(--accent); }
+
+    .chat-msgs {
+      flex: 1; overflow-y: auto;
+      padding: 14px; display: flex;
+      flex-direction: column; gap: 10px;
+      overscroll-behavior: contain;
+    }
+    .msg { max-width: 88%; font-size: 12px; line-height: 1.6; }
+    .msg.ai {
+      align-self: flex-start;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 4px 12px 12px 12px;
+      padding: 9px 12px; color: var(--text);
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px 12px 4px 12px;
+      padding: 9px 12px; color: white;
+    }
+    .msg-time { font-size: 10px; color: var(--dim); margin-top: 3px; }
+    .typing { display: flex; gap: 4px; align-items: center; padding: 3px 0; }
+    .typing span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--muted); animation: bounce 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+    .chat-sugg {
+      padding: 8px 14px;
+      display: flex; flex-wrap: wrap; gap: 5px;
+      border-top: 1px solid var(--border);
+    }
+    .sugg {
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 99px; padding: 4px 11px;
+      font-size: 11px; cursor: pointer; color: var(--muted);
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .sugg:hover { border-color: var(--accent); color: var(--accent); }
+
+    .chat-in {
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 8px; align-items: flex-end;
+    }
+    .chat-textarea {
+      flex: 1;
+      background: var(--card2); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 9px 12px;
+      font-size: 13px; color: var(--text);
+      outline: none; font-family: inherit;
+      resize: none; max-height: 120px;
+      transition: border-color 0.2s;
+      line-height: 1.5;
+    }
+    .chat-textarea:focus { border-color: var(--accent); }
+    .chat-textarea::placeholder { color: var(--dim); }
+    .send-btn {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; border-radius: 9px;
+      cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.15s; flex-shrink: 0;
+    }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* API key modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 500;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      width: 100%; max-width: 440px;
+    }
+    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .modal p  { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .modal input {
+      width: 100%; background: var(--bg);
+      border: 1.5px solid var(--border); border-radius: 9px;
+      padding: 11px 13px; font-size: 14px; color: var(--text);
+      outline: none; font-family: inherit; margin-bottom: 14px;
+    }
+    .modal input:focus { border-color: var(--accent); }
+    .modal-btns { display: flex; gap: 8px; }
+    .modal-btns button {
+      flex: 1; padding: 11px; border: none; border-radius: 9px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-cancel { background: var(--border); color: var(--muted); }
+    .btn-save   { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: var(--card2); border: 1px solid var(--border);
+      color: var(--text); padding: 11px 18px;
+      border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      z-index: 400; display: none;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    /* Tool iframe panel */
+    .tool-panel {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    .tool-panel.active { display: flex; }
+    .tool-bar {
+      background: var(--card2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0;
+    }
+    .tool-bar .tb-name { font-size: 14px; font-weight: 700; flex: 1; }
+    .tool-bar .tb-back {
+      background: var(--border); color: var(--text);
+      border: none; border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .tool-bar .tb-back:hover { background: var(--accent); }
+    .tool-bar .tb-pop {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 7px 14px; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .tool-bar .tb-pop:hover { color: var(--text); border-color: var(--text); }
+    .tool-frame {
+      flex: 1;
+      border: none;
+      width: 100%;
+      background: white;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .nav, .chat-panel { display: none; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .links-grid { grid-template-columns: repeat(3,1fr); }
+      .tools-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">3PL</div>
+    <div>
+      <div class="logo-name">3PL HUB</div>
+      <div class="logo-sub">Thai Import · eBay · TikTok · Shopify</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="rate-pill">🇹🇭 1 GBP = <span class="rate-val" id="rateVal">loading…</span></div>
+    <div class="rate-pill"><div class="live-dot"></div> <span id="rateTime" style="color:var(--muted);font-size:11px">Live rate</span></div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT NAV -->
+  <div class="nav">
+    <div class="nav-section">
+      <div class="nav-heading">Dashboard</div>
+      <div class="nav-item active" onclick="scrollTo(0,0)"><span class="ni-icon">🏠</span> Overview</div>
+      <div class="nav-item" onclick="scrollToSection('bundles-sec')"><span class="ni-icon">🎁</span> Bundles <span class="nav-badge nb-orange" id="navLowCount"></span></div>
+      <div class="nav-item" onclick="scrollToSection('sales-sec')"><span class="ni-icon">📋</span> Log Sale</div>
+      <div class="nav-item" onclick="scrollToSection('activity-sec')"><span class="ni-icon">🕐</span> Activity</div>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-section">
+      <div class="nav-heading">Your Tools</div>
+      <div class="nav-item" onclick="openTool('🏷️ Listing Generator','https://noctilucent-ltd.github.io/eBay-Tools-Apps/ebay-listing-generator.html')"><span class="ni-icon">🏷️</span> Listing Generator</div>
+      <div class="nav-item" onclick="openTool('💰 eBay Calculator','https://noctilucent-ltd.github.io/eBay-Tools-Apps/ebay-calculator.html')"><span class="ni-icon">💰</span> eBay Calculator</div>
+      <div class="nav-item" onclick="openTool('📐 Product Specs Lookup','https://noctilucent-ltd.github.io/eBay-Tools-Apps/product-specs-lookup.html')"><span class="ni-icon">📐</span> Product Specs</div>
+      <div class="nav-item" onclick="openTool('🌏 Thai Translator','https://noctilucent-ltd.github.io/eBay-Tools-Apps/thai-translator.html')"><span class="ni-icon">🌏</span> Thai Translator</div>
+      <div class="nav-item" onclick="openTool('🔍 Product Research','https://noctilucent-ltd.github.io/eBay-Tools-Apps/product-research.html')"><span class="ni-icon">🔍</span> Product Research</div>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-section">
+      <div class="nav-heading">Platforms</div>
+      <a class="nav-item ext" href="https://www.ebay.co.uk" target="_blank"><span class="ni-icon">🛍️</span> eBay</a>
+      <a class="nav-item ext" href="https://www.4seller.com/web/dashboard.html" target="_blank"><span class="ni-icon">📦</span> 4Seller</a>
+      <a class="nav-item ext" href="https://seller-uk.tiktok.com/homepage?shop_region=GB" target="_blank"><span class="ni-icon">🎵</span> TikTok Shop</a>
+      <a class="nav-item ext" href="https://www.lazada.co.th" target="_blank"><span class="ni-icon">🛒</span> Lazada TH</a>
+      <a class="nav-item ext" href="#" onclick="toast('Shopify store coming soon!')"><span class="ni-icon">🟢</span> Shopify <span class="nav-badge nb-orange">Soon</span></a>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-section">
+      <div class="nav-heading">Resources</div>
+      <a class="nav-item ext" href="https://docs.google.com/spreadsheets/d/13Brf2jgdVLXZ5kC3p8w7yXUY8JoANPWcH4EJlUNEyMU/edit" target="_blank"><span class="ni-icon">📊</span> Thai Sheet</a>
+      <a class="nav-item ext" href="https://canva.com" target="_blank"><span class="ni-icon">🎨</span> Canva</a>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainArea">
+
+  <!-- TOOL IFRAME PANEL -->
+  <div class="tool-panel" id="toolPanel">
+    <div class="tool-bar">
+      <span class="tb-name" id="toolPanelName">Tool</span>
+      <button class="tb-pop" onclick="popOutTool()" title="Open in new tab">↗ Pop out</button>
+      <button class="tb-back" onclick="closeTool()">← Back to dashboard</button>
+    </div>
+    <iframe class="tool-frame" id="toolFrame" src="" allowfullscreen></iframe>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboardPanel">
+
+    <!-- Greeting -->
+    <div class="greeting">
+      <h2 id="greeting">Good morning, Andrei 👋</h2>
+      <p id="greetingSub">Loading your dashboard…</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat" onclick="window.open('https://www.4seller.com/web/dashboard.html','_blank')" title="Open 4Seller">
+        <div class="st-label">Orders today ↗</div>
+        <div class="st-val" id="statOrders">—</div>
+        <div class="st-sub" id="statOrdersSub">Click → 4Seller</div>
+      </div>
+      <div class="stat">
+        <div class="st-label">Active bundles</div>
+        <div class="st-val" id="statBundles">—</div>
+        <div class="st-sub up" id="statBundlesSub">—</div>
+      </div>
+      <div class="stat">
+        <div class="st-label">Low stock alerts</div>
+        <div class="st-val" id="statLow" style="color:var(--orange)">—</div>
+        <div class="st-sub warn" id="statLowSub">—</div>
+      </div>
+      <div class="stat" onclick="openRateInfo()">
+        <div class="st-label">THB / GBP today</div>
+        <div class="st-val" id="statRate" style="color:var(--green)">—</div>
+        <div class="st-sub" id="statRateSub">Click for trend</div>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="sec-title">🔗 Quick access</div>
+    <div class="links-grid">
+      <a class="link-card" href="https://www.ebay.co.uk" target="_blank">
+        <div class="lc-icon">🛍️</div>
+        <div class="lc-name">eBay</div>
+        <div class="lc-sub">ebay.co.uk</div>
+      </a>
+      <a class="link-card" href="https://www.4seller.com/web/dashboard.html" target="_blank">
+        <div class="lc-icon">📦</div>
+        <div class="lc-name">4Seller</div>
+        <div class="lc-sub">Orders & inventory</div>
+      </a>
+      <a class="link-card" href="https://seller-uk.tiktok.com/homepage?shop_region=GB" target="_blank">
+        <div class="lc-icon">🎵</div>
+        <div class="lc-name">TikTok Shop</div>
+        <div class="lc-sub">UK Seller Centre</div>
+      </a>
+      <a class="link-card" href="https://www.lazada.co.th" target="_blank">
+        <div class="lc-icon">🛒</div>
+        <div class="lc-name">Lazada TH</div>
+        <div class="lc-sub">lazada.co.th</div>
+      </a>
+      <a class="link-card" href="https://docs.google.com/spreadsheets/d/13Brf2jgdVLXZ5kC3p8w7yXUY8JoANPWcH4EJlUNEyMU/edit" target="_blank">
+        <div class="lc-icon">📊</div>
+        <div class="lc-name">Thai Sheet</div>
+        <div class="lc-sub">Google Sheets</div>
+      </a>
+      <a class="link-card" href="https://canva.com" target="_blank">
+        <div class="lc-icon">🎨</div>
+        <div class="lc-name">Canva</div>
+        <div class="lc-sub">Design tool</div>
+      </a>
+      <a class="link-card" href="#" onclick="toast('Shopify coming soon!')">
+        <div class="lc-icon">🟢</div>
+        <div class="lc-name">Shopify</div>
+        <div class="lc-sub">Coming soon</div>
+      </a>
+      <a class="link-card" href="https://chat.openai.com" target="_blank">
+        <div class="lc-icon">🤖</div>
+        <div class="lc-name">ChatGPT</div>
+        <div class="lc-sub">Image generation</div>
+      </a>
+    </div>
+
+    <!-- Your tools -->
+    <div class="sec-title">🛠️ Your apps</div>
+    <div class="tools-grid">
+      <div class="tool-card" onclick="openTool('🏷️ Listing Generator','https://noctilucent-ltd.github.io/eBay-Tools-Apps/ebay-listing-generator.html')">
+        <div class="tc-icon">🏷️</div>
+        <div><div class="tc-name">eBay Listing Generator</div><div class="tc-desc">AI titles, descriptions & keywords. Single, multi-pack & bundles.</div></div>
+        <div class="tc-arr">▶</div>
+      </div>
+      <div class="tool-card" onclick="openTool('💰 eBay Calculator','https://noctilucent-ltd.github.io/eBay-Tools-Apps/ebay-calculator.html')">
+        <div class="tc-icon">💰</div>
+        <div><div class="tc-name">eBay Profit Calculator</div><div class="tc-desc">Fees, margins, minimum price. LTD & personal modes.</div></div>
+        <div class="tc-arr">▶</div>
+      </div>
+      <div class="tool-card" onclick="openTool('📐 Product Specs Lookup','https://noctilucent-ltd.github.io/eBay-Tools-Apps/product-specs-lookup.html')">
+        <div class="tc-icon">📐</div>
+        <div><div class="tc-name">Product Specs Lookup</div><div class="tc-desc">Weight & dimensions via Gemini. Single & bulk mode.</div></div>
+        <div class="tc-arr">▶</div>
+      </div>
+      <div class="tool-card" onclick="openTool('📦 Bundle Inventory','https://noctilucent-ltd.github.io/eBay-Tools-Apps/bundle-inventory.html')">
+        <div class="tc-icon">📦</div>
+        <div><div class="tc-name">Bundle Inventory</div><div class="tc-desc">Track stock, manage bundles, log sales.</div></div>
+        <div class="tc-arr">▶</div>
+      </div>
+      <div class="tool-card" onclick="openTool('🌏 Thai Translator','https://noctilucent-ltd.github.io/eBay-Tools-Apps/thai-translator.html')">
+        <div class="tc-icon">🌏</div>
+        <div><div class="tc-name">Thai Translator</div><div class="tc-desc">Product labels, supplier messages & eBay-safe wording.</div></div>
+        <div class="tc-arr">▶</div>
+      </div>
+      <div class="tool-card" onclick="openTool('🔍 Product Research','https://noctilucent-ltd.github.io/eBay-Tools-Apps/product-research.html')">
+        <div class="tc-icon">🔍</div>
+        <div><div class="tc-name">Product Research</div><div class="tc-desc">Find what sells on eBay UK from Thailand. Margins & opportunities.</div></div>
+        <div class="tc-arr">▶</div>
+      </div>
+    </div>
+
+    <!-- Bundle availability -->
+    <div class="sec-title" id="bundles-sec">🎁 Bundle availability <a href="javascript:void(0)" onclick="toast('Open bundle inventory app to manage')">Manage →</a></div>
+    <div class="bundle-list" id="bundleList">
+      <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Loading bundles…</div>
+    </div>
+
+    <!-- Log sale -->
+    <div class="sec-title" id="sales-sec">✅ Log a sale</div>
+    <div class="log-entry">
+      <div class="le-title">Quick sale entry — deducts stock automatically</div>
+      <div class="log-form">
+        <select class="log-select" id="saleSelect">
+          <option value="">Select bundle sold…</option>
+        </select>
+        <input type="number" class="log-qty" id="saleQty" value="1" min="1" max="99" />
+        <button class="btn-log" onclick="logSale()">✅ Sold</button>
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div class="sec-title" id="activity-sec">🕐 Recent activity</div>
+    <div class="activity" id="activityList">
+      <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No activity yet — log your first sale above</div>
+    </div>
+
+  </div><!-- end dashboardPanel -->
+  </div><!-- end mainArea -->
+
+  <!-- RIGHT CHAT -->
+  <div class="chat-panel">
+    <div class="chat-top">
+      <div class="ai-ava">🤖</div>
+      <div>
+        <div class="ct-name">Business Assistant</div>
+        <div class="ct-sub" id="chatStatus">● Connecting…</div>
+      </div>
+      <span class="ct-key" onclick="openKeyModal()">🔑 API key</span>
+    </div>
+
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg ai" id="welcomeMsg">
+        Hey! 👋 I'm your Thai import business assistant.<br><br>
+        I know your eBay fees, THB/GBP rates, and product catalogue. Ask me anything about pricing, margins, listings, or importing.
+        <div class="msg-time">Just now</div>
+      </div>
+    </div>
+
+    <div class="chat-sugg">
+      <div class="sugg" onclick="fillChat(this)">Calculate margin</div>
+      <div class="sugg" onclick="fillChat(this)">Best THB rate?</div>
+      <div class="sugg" onclick="fillChat(this)">UK import duty?</div>
+      <div class="sugg" onclick="fillChat(this)">Write listing title</div>
+      <div class="sugg" onclick="fillChat(this)">Translate Thai</div>
+    </div>
+
+    <div class="chat-in">
+      <textarea class="chat-textarea" id="chatInput" rows="1" placeholder="Ask your business assistant…"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendChat()">↑</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="keyModal">
+  <div class="modal">
+    <h3>🔑 Gemini API Key</h3>
+    <p>Your key is stored only in your browser and never shared. Get a free key at <strong>aistudio.google.com</strong> → Get API key.</p>
+    <input type="password" id="keyInput" placeholder="Paste your Gemini API key here…" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeKeyModal()">Cancel</button>
+      <button class="btn-save" onclick="saveKey()">Save key</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+  // ── Tool panel ───────────────────────────────────────────────
+  let currentToolUrl = '';
+
+  function openTool(name, url) {
+    currentToolUrl = url;
+    document.getElementById('toolPanelName').textContent = name;
+    document.getElementById('toolFrame').src = url;
+    document.getElementById('toolPanel').classList.add('active');
+    document.getElementById('dashboardPanel').style.display = 'none';
+    document.getElementById('mainArea').style.padding = '0';
+    document.getElementById('mainArea').style.overflow = 'hidden';
+
+    // Highlight nav item
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  }
+
+  function closeTool() {
+    document.getElementById('toolPanel').classList.remove('active');
+    document.getElementById('dashboardPanel').style.display = 'block';
+    document.getElementById('mainArea').style.padding = '20px';
+    document.getElementById('mainArea').style.overflow = 'auto';
+    document.getElementById('toolFrame').src = '';
+    currentToolUrl = '';
+  }
+
+  function popOutTool() {
+    if (currentToolUrl) window.open(currentToolUrl, '_blank');
+  }
+
+  // ── Data keys ─────────────────────────────────────────────────
+  const GEMINI_KEY  = () => localStorage.getItem('gemini_api_key') || '';
+  const PRODUCTS_KEY = 'inv_products';
+  const BUNDLES_KEY  = 'inv_bundles';
+  const LOG_KEY      = 'hub_activity';
+  const ORDERS_KEY   = 'hub_orders_today';
+
+  function getData(k,d){ try{return JSON.parse(localStorage.getItem(k))||d}catch{return d} }
+  function setData(k,v){ localStorage.setItem(k,JSON.stringify(v)) }
+
+  // ── User name ─────────────────────────────────────────────────
+  function getUserName() {
+    return localStorage.getItem('hub_user_name') || '';
+  }
+  function setUserName(name) {
+    localStorage.setItem('hub_user_name', name);
+  }
+  function askUserName() {
+    const name = prompt('Welcome to 3PL HUB! What\'s your name?');
+    if (name && name.trim()) { setUserName(name.trim()); return name.trim(); }
+    return 'there';
+  }
+
+  // ── Greeting ──────────────────────────────────────────────────
+  function initGreeting() {
+    let name = getUserName();
+    if (!name) name = askUserName();
+
+    const h = new Date().getHours();
+    const g = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+    document.getElementById('greeting').textContent = `${g}, ${name} 👋`;
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    document.getElementById('greetingSub').textContent =
+      `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} · Thai Import Dashboard`;
+  }
+
+  // ── Exchange rate ─────────────────────────────────────────────
+  async function fetchRate() {
+    try {
+      const res  = await fetch('https://api.exchangerate-api.com/v4/latest/GBP');
+      const data = await res.json();
+      const rate = data.rates?.THB;
+      if (rate) {
+        const r = rate.toFixed(2);
+        document.getElementById('rateVal').textContent   = r + ' THB';
+        document.getElementById('statRate').textContent  = r;
+        document.getElementById('statRateSub').textContent = rate > 44 ? '↑ Good rate today' : '↓ Below average';
+        document.getElementById('statRateSub').className = 'st-sub ' + (rate > 44 ? 'up' : 'down');
+        document.getElementById('rateTime').textContent  = 'Updated ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      }
+    } catch(e) {
+      document.getElementById('rateVal').textContent = 'unavailable';
+    }
+  }
+
+  function openRateInfo() {
+    window.open('https://www.google.com/search?q=GBP+to+THB', '_blank');
+  }
+
+  // ── Bundles ───────────────────────────────────────────────────
+  function getProducts() { return getData(PRODUCTS_KEY, []); }
+  function getBundles()  { return getData(BUNDLES_KEY, []); }
+
+  function calcAvail(bundle) {
+    const prods = getProducts();
+    let a = Infinity;
+    for (const c of bundle.components) {
+      const p = prods.find(p => p.id === c.pid);
+      if (!p) return 0;
+      a = Math.min(a, Math.floor(p.stock / c.qty));
+    }
+    return a === Infinity ? 0 : a;
+  }
+
+  function renderBundles() {
+    const bundles = getBundles();
+    const list    = document.getElementById('bundleList');
+    const sel     = document.getElementById('saleSelect');
+
+    if (!bundles.length) {
+      list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No bundles yet — open the Bundle Inventory app to add them.</div>`;
+      return;
+    }
+
+    let lowCount = 0;
+    list.innerHTML = '';
+    sel.innerHTML  = '<option value="">Select bundle sold…</option>';
+
+    bundles.forEach(b => {
+      const avail   = calcAvail(b);
+      const isActive = b.status === 'active';
+      const aClass  = avail === 0 ? 'out' : avail <= 2 ? 'low' : 'ok';
+      if (avail <= 2 && isActive) lowCount++;
+
+      const div = document.createElement('div');
+      div.className = 'bundle-row';
+      div.innerHTML = `
+        <div style="flex:1">
+          <div class="br-name">${b.name}</div>
+          <div class="br-comp">${b.components.map(c=>{const p=getProducts().find(p=>p.id===c.pid);return p?`${c.qty}× ${p.name}`:''}).join(' + ')}</div>
+        </div>
+        <span class="status-pill ${isActive?'sp-active':'sp-paused'}">${isActive?'Active':'Paused'}</span>
+        <div style="text-align:center">
+          <div class="avail ${aClass}">${avail}</div>
+          <div class="avail-label">can make</div>
+        </div>`;
+      list.appendChild(div);
+
+      if (isActive) {
+        const opt = document.createElement('option');
+        opt.value = b.id;
+        opt.textContent = `${b.name} (${avail} available)`;
+        sel.appendChild(opt);
+      }
+    });
+
+    // Update stats
+    document.getElementById('statBundles').textContent    = bundles.filter(b=>b.status==='active').length;
+    document.getElementById('statBundlesSub').textContent = `${bundles.length} total bundles`;
+    document.getElementById('statLow').textContent        = lowCount;
+    document.getElementById('statLowSub').textContent     = lowCount ? `${lowCount} bundle${lowCount>1?'s':''} need restocking` : 'All stock levels OK';
+    if (lowCount) document.getElementById('navLowCount').textContent = lowCount;
+  }
+
+  // ── Log sale ──────────────────────────────────────────────────
+  function logSale() {
+    const bid = parseInt(document.getElementById('saleSelect').value);
+    const qty = parseInt(document.getElementById('saleQty').value) || 1;
+    if (!bid) { toast('⚠️ Select a bundle first'); return; }
+
+    const bundles  = getBundles();
+    const products = getProducts();
+    const b = bundles.find(b => b.id === bid);
+    if (!b) return;
+
+    const avail = calcAvail(b);
+    if (qty > avail) { toast(`⚠️ Only ${avail} available!`); return; }
+
+    // Deduct stock
+    b.components.forEach(c => {
+      const p = products.find(p => p.id === c.pid);
+      if (p) p.stock -= c.qty * qty;
+    });
+    setData(PRODUCTS_KEY, products);
+
+    // Log
+    const log = getData(LOG_KEY, []);
+    log.unshift({ type:'sale', name:b.name, qty, ts: Date.now() });
+    if (log.length > 100) log.length = 100;
+    setData(LOG_KEY, log);
+
+    // Orders today
+    const today = new Date().toDateString();
+    const ord   = getData(ORDERS_KEY, { date:'', count:0 });
+    if (ord.date === today) ord.count += qty; else { ord.date = today; ord.count = qty; }
+    setData(ORDERS_KEY, ord);
+
+    toast(`✅ Sold ${qty}× ${b.name}`);
+    renderBundles();
+    renderActivity();
+    updateOrderStat();
+  }
+
+  function updateOrderStat() {
+    const today = new Date().toDateString();
+    const ord   = getData(ORDERS_KEY, { date:'', count:0 });
+    const count = ord.date === today ? ord.count : 0;
+    document.getElementById('statOrders').textContent    = count;
+    document.getElementById('statOrdersSub').textContent = count ? `+${count} logged today` : 'Log sales below';
+  }
+
+  // ── Activity ──────────────────────────────────────────────────
+  function renderActivity() {
+    const log  = getData(LOG_KEY, []);
+    const list = document.getElementById('activityList');
+    if (!log.length) {
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No activity yet</div>';
+      return;
+    }
+    list.innerHTML = log.slice(0,8).map(l => {
+      const time = new Date(l.ts).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      const icon = l.type === 'sale' ? '✅' : '📦';
+      const sign = l.type === 'sale' ? '-' : '+';
+      return `<div class="act-row ${l.type}">
+        <span class="ar-icon">${icon}</span>
+        <span class="ar-text">${l.type==='sale'?'Sold':'Restocked'} <strong>${l.name}</strong></span>
+        <span class="ar-qty">${sign}${l.qty}</span>
+        <span class="ar-time">${time}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Chat ──────────────────────────────────────────────────────
+  const SYSTEM_PROMPT = `You are a smart business assistant for ${getUserName() || 'the team'}, who works for a Thai import business selling on eBay UK, TikTok Shop, and Shopify. Address the user by their name (${getUserName() || 'their name'}) when greeting them.
+
+Key facts about his business:
+- He imports traditional Thai health, wellness, and beauty products (Tiger Balm, Wang Prom, Snake Brand, Somthawin, Poy Sian, Muay Thai Cream, Siang Pure, Thai herbal inhalers, etc.)
+- He sells multi-packs and bundles (e.g. 3-Pack, 6-Pack, 18-Pack)
+- eBay fees (LTD company): 10.9% Final Value Fee + 0.35% regulatory fee + £0.40 fixed (orders over £10) + 20% VAT on all fees
+- Typical postage cost: £3.10 (Royal Mail / Evri standard parcel)
+- He imports via DDP from Thailand, freight cost ~400 THB per kg
+- Current GBP/THB rate is live in the dashboard
+- He uses 4Seller to manage eBay and TikTok orders
+- His prep centre charges £1.50 per unit
+
+When calculating margins, use actual eBay fee structure above.
+When asked about Thai products, give authentic cultural context.
+When asked to translate, translate accurately between English and Thai.
+Keep answers concise and practical. Use bullet points for clarity.`;
+
+  function fillChat(el) {
+    document.getElementById('chatInput').value = el.textContent;
+    document.getElementById('chatInput').focus();
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    const key = GEMINI_KEY();
+    if (!key) { openKeyModal(); return; }
+
+    appendMsg('user', text);
+    input.value = '';
+    input.style.height = 'auto';
+
+    const typingDiv = appendTyping();
+    document.getElementById('sendBtn').disabled = true;
+
+    try {
+      const history = buildHistory();
+      const payload = {
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [...history, { role:'user', parts:[{ text }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+      };
+
+      const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+
+      if (!res.ok) throw new Error(json.error?.message || `Error ${res.status}`);
+
+      const reply = json.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no response.';
+      typingDiv.remove();
+      appendMsg('ai', reply);
+    } catch(err) {
+      typingDiv.remove();
+      appendMsg('ai', `❌ ${err.message}`);
+    } finally {
+      document.getElementById('sendBtn').disabled = false;
+    }
+  }
+
+  function appendMsg(role, text) {
+    const msgs = document.getElementById('chatMsgs');
+    const div  = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = `${text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}<div class="msg-time">${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    saveHistory(role, text);
+    return div;
+  }
+
+  function appendTyping() {
+    const msgs = document.getElementById('chatMsgs');
+    const div  = document.createElement('div');
+    div.className = 'msg ai';
+    div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  // Simple in-memory conversation history
+  let chatHistory = [];
+  function saveHistory(role, text) {
+    chatHistory.push({ role: role === 'ai' ? 'model' : 'user', parts:[{ text }] });
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+  }
+  function buildHistory() { return chatHistory.slice(-10); }
+
+  document.getElementById('chatInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+  document.getElementById('chatInput').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+
+  // ── API Key Modal ─────────────────────────────────────────────
+  function openKeyModal() {
+    document.getElementById('keyInput').value = GEMINI_KEY();
+    document.getElementById('keyModal').classList.add('open');
+    setTimeout(() => document.getElementById('keyInput').focus(), 100);
+  }
+  function closeKeyModal() { document.getElementById('keyModal').classList.remove('open'); }
+  function saveKey() {
+    const k = document.getElementById('keyInput').value.trim();
+    if (!k) return;
+    localStorage.setItem('gemini_api_key', k);
+    closeKeyModal();
+    updateChatStatus();
+    toast('✅ API key saved');
+  }
+  document.getElementById('keyModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('keyModal')) closeKeyModal();
+  });
+  document.getElementById('keyInput').addEventListener('keydown', e => { if(e.key==='Enter') saveKey(); });
+
+  function updateChatStatus() {
+    const el = document.getElementById('chatStatus');
+    if (GEMINI_KEY()) { el.textContent = '● Online — Gemini 2.5'; el.style.color = 'var(--green)'; }
+    else { el.textContent = '⚠️ Add API key →'; el.style.color = 'var(--orange)'; }
+  }
+
+  // ── Scroll helper ─────────────────────────────────────────────
+  function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────
+  function toast(msg) {
+    const t = document.getElementById('toastEl');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 2500);
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  initGreeting();
+  // Personalise welcome message
+  const welcomeMsg = document.getElementById('welcomeMsg');
+  const uname = getUserName();
+  if (uname) welcomeMsg.innerHTML = `Hey ${uname}! 👋 I'm your Thai import business assistant.<br><br>I know your eBay fees, THB/GBP rates, and product catalogue. Ask me anything about pricing, margins, listings, or importing.<div class="msg-time">Just now</div>`;
+  fetchRate();
+  setInterval(fetchRate, 300000); // refresh rate every 5 min
+  renderBundles();
+  renderActivity();
+  updateOrderStat();
+  updateChatStatus();
+</script>
+</body>
+</html>
